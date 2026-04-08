@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SSP Wetten</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#f0f0f0;min-height:100vh}
+.app{max-width:430px;margin:0 auto;background:#0f1117;min-height:100vh;display:flex;flex-direction:column}
+.nav{display:flex;background:#161820;border-top:0.5px solid #2a2d3a;padding:0 4px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:10}
+.nav-btn{flex:1;padding:10px 4px 8px;font-size:10px;font-weight:500;color:#555;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-btn svg{width:18px;height:18px;stroke-width:1.8;stroke:currentColor;fill:none}
+.nav-btn.active{color:#c8ff00}
+.page{display:none;flex:1;overflow-y:auto;padding:16px 16px 80px}
+.page.active{display:block}
+.section-title{font-size:11px;color:#444;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:500}
+.quote-card{background:#161820;border:0.5px solid #2a2d3a;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px;flex-shrink:0}
+.quote-info{flex:1;min-width:0}
+.quote-name{font-size:14px;font-weight:500;color:#f0f0f0}
+.quote-sub{font-size:11px;color:#444;margin-top:1px}
+.risk-bar{height:2px;border-radius:2px;background:#1e2230;margin-top:6px}
+.risk-fill{height:100%;border-radius:2px}
+.quote-right{text-align:right;flex-shrink:0}
+.quote-val{font-size:20px;font-weight:500;color:#f0f0f0}
+.quote-arrow{font-size:11px;margin-top:2px}
+.arrow-up{color:#4ade80}.arrow-dn{color:#f87171}.arrow-eq{color:#555}
+.q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.q-card{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:12px}
+.q-card .label{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.q-card .val{font-size:16px;font-weight:500;color:#f0f0f0}
+.q-card .sub{font-size:11px;color:#444;margin-top:2px}
+.btn-primary{width:100%;padding:13px;background:#c8ff00;color:#0f1117;border:none;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;margin-top:12px}
+.btn-secondary{width:100%;padding:12px;background:transparent;color:#4ade80;border:0.5px solid #2a5a2f;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;margin-top:6px}
+.chip{padding:7px 14px;border-radius:20px;border:0.5px solid #2a2d3a;background:#161820;color:#888;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none}
+.chip.selected{background:#1e2a10;border-color:#c8ff00;color:#c8ff00}
+.chip.loser-sel{background:#2a1515;border-color:#f87171;color:#f87171}
+.chip.finalist-sel{background:#1a1f35;border-color:#7bb3ff;color:#7bb3ff}
+.chip-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.wizard-step{display:none}.wizard-step.active{display:block}
+.step-dots{display:flex;gap:5px;margin-bottom:16px}
+.step-dot{width:5px;height:5px;border-radius:50%;background:#222;transition:background .3s}
+.step-dot.done{background:#c8ff00}
+.step-title{font-size:18px;font-weight:500;color:#f0f0f0;margin-bottom:4px}
+.step-sub{font-size:12px;color:#555;margin-bottom:16px}
+.bet-block{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.bet-block-name{font-size:13px;font-weight:500;color:#f0f0f0;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.bet-block-label{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.target-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.target-chip{padding:5px 10px;border-radius:16px;border:0.5px solid #2a2d3a;background:#1a1c26;color:#666;font-size:12px;cursor:pointer;transition:all .15s;user-select:none}
+.target-chip.active{background:#1e2a10;border-color:#c8ff00;color:#c8ff00;font-weight:500}
+.stake-row{display:flex;gap:6px}
+.stake-pill{flex:1;padding:9px 4px;border-radius:10px;border:0.5px solid #2a2d3a;background:#1a1c26;color:#555;font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;user-select:none}
+.stake-pill.active{background:#1e2a10;border-color:#c8ff00;color:#c8ff00}
+.bet-summary{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px solid #1e2230}
+.bet-summary-text{font-size:11px;color:#444}
+.bet-summary-val{font-size:11px;font-weight:500;color:#c8ff00}
+.history-card{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.hist-chip{font-size:11px;padding:2px 7px;border-radius:8px;background:#1e2230;color:#555}
+.hist-chip.winner{background:#1e2a10;color:#4ade80}
+.bet-detail-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid #1a1c26}
+.bet-detail-row:last-child{border-bottom:none}
+.lb-row{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+.wa-box{background:#0b1a0e;border:0.5px solid #1a3a1f;border-radius:12px;padding:14px;font-size:12px;color:#a8d5a8;line-height:1.9;font-family:monospace;white-space:pre-wrap;word-break:break-word}
+.copy-btn{width:100%;padding:12px;background:#1e3a22;color:#4ade80;border:0.5px solid #2a5a2f;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;margin-top:8px}
+.copy-btn.copied{background:#0b2210;color:#22c55e}
+.pot-banner{background:#161820;border:0.5px solid #2a3050;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.divider{height:0.5px;background:#1e2230;margin:14px 0}
+.payout-badge{background:#0d1a08;border:0.5px solid #2a5010;border-radius:8px;padding:2px 8px;font-size:11px;color:#c8ff00;font-weight:500}
+.text-input{width:100%;padding:12px 14px;background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;color:#f0f0f0;font-size:14px;outline:none;margin-bottom:10px}
+.text-input:focus{border-color:#c8ff00}
+.player-manage-row{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
+.toggle-btn{background:none;border:0.5px solid #2a2d3a;border-radius:8px;color:#555;font-size:11px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.toggle-btn.active-bet{border-color:#4ade80;color:#4ade80;background:#082210}
+.wetter-section{border-top:0.5px solid #1e2230;padding-top:12px;margin-top:4px}
+.wetter-toggle{display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer}
+.wetter-toggle-label{font-size:12px;color:#555}
+</style></head><body>
+<div class="app">
+  <div style="flex:1">
+
+    <div id="page-home" class="page active">
+      <div style="padding:4px 0 0">
+        <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Schere Stein Papier</div>
+        <h1 style="font-size:22px;font-weight:500;color:#f0f0f0;margin-bottom:14px">Wer verliert heute?</h1>
+      </div>
+      <div class="pot-banner">
+        <div>
+          <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Bank</div>
+          <div style="font-size:26px;font-weight:500;color:#c8ff00" id="home-bank">–</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#444;margin-bottom:3px">Spiele gesamt</div>
+          <div style="font-size:16px;font-weight:500;color:#f0f0f0" id="home-days">–</div>
+        </div>
+      </div>
+      <div class="section-title">Quoten heute</div>
+      <div id="home-top-quotes"></div>
+      <div class="divider"></div>
+      <div class="section-title">Quick Stats</div>
+      <div class="q-grid" id="home-stats"></div>
+      <button class="btn-primary" onclick="startWizard()">+ Neuen Tag eingeben</button>
+      <button class="btn-secondary" onclick="showPage('whatsapp')">WhatsApp-Zusammenfassung</button>
+    </div>
+
+    <div id="page-quotes" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Alle Spieler</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:6px">Quotenboard</h2>
+      <div style="font-size:11px;color:#444;margin-bottom:14px">Neue Spieler starten bei 2.20</div>
+      <div id="quotes-list"></div>
+    </div>
+
+    <div id="page-new-day" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Neuer Tag</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:12px">Ergebnis eingeben</h2>
+      <div class="step-dots" id="step-dots"></div>
+
+      <div class="wizard-step active" id="step-0">
+        <div class="step-title">Wer hat mitgespielt?</div>
+        <div class="step-sub">Nur die SSP-Teilnehmer von heute</div>
+        <div class="chip-grid" id="p-chips"></div>
+        <button class="btn-primary" onclick="nextStep(0)">Weiter →</button>
+      </div>
+
+      <div class="wizard-step" id="step-1">
+        <div class="step-title">Finalisten?</div>
+        <div class="step-sub">Wer war im Finale? (optional)</div>
+        <div class="chip-grid" id="f-chips"></div>
+        <button class="btn-primary" onclick="nextStep(1)">Weiter →</button>
+      </div>
+
+      <div class="wizard-step" id="step-2">
+        <div class="step-title">Wer hat verloren?</div>
+        <div class="step-sub">Den Verlierer auswählen</div>
+        <div class="chip-grid" id="l-chips"></div>
+        <button class="btn-primary" onclick="nextStep(2)">Weiter →</button>
+      </div>
+
+      <div class="wizard-step" id="step-3">
+        <div class="step-title">Wetten eingeben</div>
+        <div class="step-sub">Alle können wetten — auch Nicht-Mitspieler</div>
+        <div id="bet-rows-container"></div>
+        <div id="pot-preview" style="background:#0d1a08;border:0.5px solid #2a5010;border-radius:10px;padding:10px 14px;margin-top:4px;display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:11px;color:#4a7a20">Einsätze gesamt</span>
+            <span style="font-size:14px;font-weight:500;color:#c8ff00" id="pot-total">0€</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:#4a7a20">Max. Auszahlung</span>
+            <span style="font-size:13px;font-weight:500;color:#f87171" id="pot-maxpayout">0€</span>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="submitDay()">Tag speichern ✓</button>
+      </div>
+    </div>
+
+    <div id="page-history" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Verlauf</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:14px">Spielhistorie</h2>
+      <div id="history-list"></div>
+    </div>
+
+    <div id="page-leaderboard" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Rangliste</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:10px">Leaderboard</h2>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">
+        <div class="chip selected" id="lt-losses" onclick="switchLb('losses')">Niederlagen</div>
+        <div class="chip" id="lt-streak" onclick="switchLb('streak')">Streak</div>
+        <div class="chip" id="lt-finals" onclick="switchLb('finals')">Finals</div>
+        <div class="chip" id="lt-profit" onclick="switchLb('profit')">Kontostand</div>
+      </div>
+      <div id="lb-list"></div>
+    </div>
+
+    <div id="page-settings" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Einstellungen</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:16px">Spieler verwalten</h2>
+
+      <div class="section-title">Neuen Spieler hinzufügen</div>
+      <input class="text-input" id="new-player-input" placeholder="Name eingeben..." maxlength="20"
+        onkeydown="if(event.key==='Enter')addPlayer()">
+      <button class="btn-primary" style="margin-top:0" onclick="addPlayer()">Spieler hinzufügen</button>
+      <div id="add-player-msg" style="font-size:12px;color:#4ade80;margin-top:8px;min-height:18px"></div>
+
+      <div class="divider"></div>
+      <div class="section-title">Alle Spieler</div>
+      <div id="player-manage-list"></div>
+    </div>
+
+    <div id="page-whatsapp" class="page">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Teilen</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:14px">WhatsApp</h2>
+      <div class="wa-box" id="wa-text"></div>
+      <button class="copy-btn" id="copy-btn" onclick="copyWA()">Kopieren</button>
+    </div>
+
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+    </button>
+    <button class="nav-btn" id="nav-quotes" onclick="showPage('quotes')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Quoten
+    </button>
+    <button class="nav-btn" id="nav-new-day" onclick="startWizard()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Neu
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="showPage('history')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Verlauf
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Spieler
+    </button>
+  </nav>
+</div>
+
+<script>
+const Q_NEW = 2.20;
+
+const COLORS=['#7bb3ff','#f9a8d4','#c8ff00','#f87171','#fbbf24','#a78bfa','#34d399','#fb923c','#38bdf8','#e879f9','#4ade80','#f472b6','#60a5fa','#facc15','#a3e635','#67e8f9','#fda4af','#d8b4fe'];
+const BKGS  =['#0d1a30','#2a0d1a','#1a2a08','#2a0808','#2a1a08','#1a0d30','#082a1a','#2a1208','#082230','#280d30','#082210','#2a0818','#0d1a2a','#2a2208','#1a2a08','#082a2a','#2a0d12','#1a0d2a'];
+
+// All players — can be extended dynamically
+let ALL_PLAYERS = [
+  {id:'bruemmi',name:'Brümmi'},
+  {id:'dave',   name:'Dave'},
+  {id:'guez',   name:'Güz'},
+  {id:'hannes', name:'Hannes'},
+  {id:'jakob',  name:'Jakob'},
+  {id:'jan',    name:'Jan Borges'},
+  {id:'jano',   name:'Jano'},
+  {id:'jonas',  name:'Jonas'},
+  {id:'kilian', name:'Kilian'},
+  {id:'lara',   name:'Lara'},
+  {id:'lasse',  name:'Lasse'},
+  {id:'leo',    name:'Leo'},
+  {id:'niclas', name:'Niclas'},
+  {id:'sebo',   name:'Sebo'},
+];
+ALL_PLAYERS.forEach((p,i)=>{p.color=COLORS[i%COLORS.length];p.bg=BKGS[i%BKGS.length];});
+
+function gp(id){return ALL_PLAYERS.find(p=>p.id===id)||{id,name:id,color:'#888',bg:'#222'};}
+
+// Quoten nach Stand 08.04.26
+let CURRENT_QUOTES = {
+  niclas:{current:1.55,prev:1.50},
+  leo:   {current:1.85,prev:1.80},
+  kilian:{current:2.05,prev:2.00},
+  guez:  {current:2.20,prev:2.20},
+  jano:  {current:2.20,prev:2.20},
+  jonas: {current:2.20,prev:2.20},
+  lasse: {current:2.35,prev:2.50},
+  sebo:  {current:2.50,prev:2.50},
+};
+
+let HISTORY = [
+  {date:'2026-04-08',participants:['leo','kilian','guez','lasse','niclas','jano','jonas','sebo'],finalists:['jonas','lasse'],loser:'lasse',bets:[]},
+  {date:'2026-04-07',participants:['leo','kilian','sebo','niclas'],finalists:['niclas','leo'],loser:'niclas',
+   bets:[
+    {player:'jan',    target:'kilian',stake:3,quoteAtTime:2.00},
+    {player:'sebo',   target:'leo',   stake:1,quoteAtTime:1.80},
+    {player:'jakob',  target:'sebo',  stake:3,quoteAtTime:2.50},
+    {player:'bruemmi',target:'lasse', stake:3,quoteAtTime:2.50},
+    {player:'niclas', target:'lasse', stake:2,quoteAtTime:2.50},
+    {player:'leo',    target:'sebo',  stake:2,quoteAtTime:2.50},
+    {player:'kilian', target:'niclas',stake:1,quoteAtTime:1.50},
+    {player:'lasse',  target:'sebo',  stake:2,quoteAtTime:2.50},
+  ]},
+  {date:'2026-04-02',participants:['kilian','lasse','leo','sebo'],finalists:['leo','niclas'],loser:'leo',bets:[]},
+  {date:'2026-04-01',participants:['niclas','kilian','lasse','sebo','leo'],finalists:['lasse','niclas','kilian'],loser:'kilian',bets:[]},
+  {date:'2026-03-31',participants:['kilian','lasse','leo','niclas','sebo'],finalists:['sebo','niclas'],loser:'niclas',bets:[]},
+];
+
+function getQuote(pid){
+  return CURRENT_QUOTES[pid]||{current:Q_NEW,prev:Q_NEW};
+}
+function calcPayout(bet,loser){
+  if(bet.target!==loser) return 0;
+  return +((bet.quoteAtTime||1.5)*bet.stake).toFixed(2);
+}
+function calcBank(){
+  let b=0;
+  HISTORY.forEach(day=>day.bets.forEach(bet=>{b+=bet.stake;b-=calcPayout(bet,day.loser);}));
+  return +b.toFixed(2);
+}
+function calcStats(pid){
+  const days=HISTORY.filter(d=>d.participants.includes(pid));
+  const losses=HISTORY.filter(d=>d.loser===pid).length;
+  const finals=HISTORY.filter(d=>d.finalists&&d.finalists.includes(pid)).length;
+  let totalStaked=0,totalWon=0,wins=0;
+  HISTORY.forEach(day=>{
+    const mb=day.bets.find(b=>b.player===pid);
+    if(!mb) return;
+    totalStaked+=mb.stake;
+    const p=calcPayout(mb,day.loser);
+    if(p>0){wins++;totalWon+=p;}
+  });
+  let streak=0,cur=0,bestStreak=0,started=false;
+  [...HISTORY].reverse().forEach(d=>{
+    if(!d.participants.includes(pid)) return;
+    if(d.loser!==pid){cur++;if(!started)streak=cur;bestStreak=Math.max(bestStreak,cur);}
+    else{if(!started)started=true;bestStreak=Math.max(bestStreak,cur);cur=0;}
+    started=true;
+  });
+  const lastLoss=[...HISTORY].reverse().find(d=>d.loser===pid);
+  return{participations:days.length,losses,finals,wins,totalStaked:+totalStaked.toFixed(2),totalWon:+totalWon.toFixed(2),net:+(totalWon-totalStaked).toFixed(2),streak,bestStreak,lastLoss:lastLoss?lastLoss.date:null};
+}
+function fmtDate(d){const[y,m,dd]=d.split('-');return`${dd}.${m}.${y.slice(2)}`;}
+
+// --- HOME ---
+function renderHome(){
+  const sorted=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id)})).sort((a,b)=>a.q.current-b.q.current);
+  document.getElementById('home-top-quotes').innerHTML=sorted.slice(0,3).map(({p,q})=>{
+    const diff=+(q.current-q.prev).toFixed(2);
+    const arrow=diff<-0.01?'↓':diff>0.01?'↑':'→';
+    const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';
+    const s=calcStats(p.id);
+    const rp=Math.round((1/q.current)*100);
+    return`<div class="quote-card"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">${s.losses} NL · ${s.participations} Spiele</div><div class="risk-bar"><div class="risk-fill" style="width:${Math.min(rp,100)}%;background:${p.color}"></div></div></div><div class="quote-right"><div class="quote-val">${q.current.toFixed(2)}</div><div class="quote-arrow ${cls}">${arrow} ${Math.abs(diff).toFixed(2)}</div></div></div>`;
+  }).join('');
+  const allS=ALL_PLAYERS.map(p=>({p,s:calcStats(p.id)})).filter(x=>x.s.participations>0);
+  const ml=[...allS].sort((a,b)=>b.s.losses-a.s.losses)[0]||{p:{name:'–'},s:{losses:0}};
+  const bs=[...allS].sort((a,b)=>b.s.streak-a.s.streak)[0]||{p:{name:'–'},s:{streak:0}};
+  const bf=[...allS].sort((a,b)=>b.s.finals-a.s.finals)[0]||{p:{name:'–'},s:{finals:0}};
+  const ll=HISTORY[0];
+  document.getElementById('home-stats').innerHTML=`
+    <div class="q-card"><div class="label">Meiste Niederlagen</div><div class="val">${ml.p.name}</div><div class="sub">${ml.s.losses} NL</div></div>
+    <div class="q-card"><div class="label">Längste Streak</div><div class="val">${bs.p.name}</div><div class="sub">${bs.s.streak} Tage safe</div></div>
+    <div class="q-card"><div class="label">Meiste Finals</div><div class="val">${bf.p.name}</div><div class="sub">${bf.s.finals} Finals</div></div>
+    <div class="q-card"><div class="label">Letzte Niederlage</div><div class="val">${ll?gp(ll.loser).name:'–'}</div><div class="sub">${ll?fmtDate(ll.date):'–'}</div></div>`;
+  const bank=calcBank();
+  document.getElementById('home-bank').textContent=(bank>=0?'+':'')+bank.toFixed(2)+'€';
+  document.getElementById('home-days').textContent=HISTORY.length+' Spiele';
+}
+
+// --- QUOTES ---
+function renderQuotes(){
+  const known=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id),s:calcStats(id)})).sort((a,b)=>a.q.current-b.q.current);
+  const inactive=ALL_PLAYERS.filter(p=>!CURRENT_QUOTES[p.id]&&calcStats(p.id).participations===0);
+  document.getElementById('quotes-list').innerHTML=known.map(({p,q,s})=>{
+    const diff=+(q.current-q.prev).toFixed(2);
+    const arrow=diff<-0.01?'↓ Gefährlicher':diff>0.01?'↑ Safer':'→';
+    const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';
+    const rp=Math.round((1/q.current)*100);
+    return`<div class="quote-card"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">${s.losses} NL / ${s.participations} Spiele · ${rp}% Risiko</div><div class="risk-bar"><div class="risk-fill" style="width:${Math.min(rp,100)}%;background:${p.color}"></div></div></div><div class="quote-right"><div class="quote-val">${q.current.toFixed(2)}</div><div class="quote-arrow ${cls}">${arrow}</div></div></div>`;
+  }).join('')+(inactive.length?`<div style="margin-top:14px"><div class="section-title">Noch nicht gespielt — Startquote ${Q_NEW.toFixed(2)}</div>${inactive.map(p=>`<div class="quote-card" style="opacity:.4"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">Noch kein Spiel</div></div><div class="quote-right"><div class="quote-val">${Q_NEW.toFixed(2)}</div></div></div>`).join('')}</div>`:'');
+}
+
+// --- WIZARD ---
+let wStep=0,wParts=[],wFinals=[],wLoser=null,wBets={};
+
+function startWizard(){
+  wStep=0;wParts=[];wFinals=[];wLoser=null;wBets={};
+  showPage('new-day');renderStepDots();renderStep0();
+}
+function renderStepDots(){
+  document.getElementById('step-dots').innerHTML=[0,1,2,3].map(i=>`<div class="step-dot${i<=wStep?' done':''}"></div>`).join('');
+}
+function showWStep(n){[0,1,2,3].forEach(i=>document.getElementById('step-'+i).classList.toggle('active',i===n));}
+function renderStep0(){
+  document.getElementById('p-chips').innerHTML=ALL_PLAYERS.map(p=>`<div class="chip${wParts.includes(p.id)?' selected':''}" onclick="togglePart('${p.id}')">${p.name}</div>`).join('');
+}
+function renderStep1(){
+  document.getElementById('f-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wFinals.includes(id)?' finalist-sel':''}" onclick="toggleFinal('${id}')">${p.name}</div>`;}).join('');
+}
+function renderStep2(){
+  document.getElementById('l-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wLoser===id?' loser-sel':''}" onclick="selLoser('${id}')">${p.name}</div>`;}).join('');
+}
+
+function renderStep3(){
+  // Init: alle Spieler können wetten — vorauswählen wer mitgespielt hat
+  ALL_PLAYERS.forEach(p=>{
+    if(!wBets[p.id]) wBets[p.id]={target:null,stake:2,active:wParts.includes(p.id)};
+    else wBets[p.id].active=wBets[p.id].active||wParts.includes(p.id);
+  });
+
+  const activeBettors=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active);
+  const inactiveBettors=ALL_PLAYERS.filter(p=>!wBets[p.id]||!wBets[p.id].active);
+
+  document.getElementById('bet-rows-container').innerHTML=`
+    <div id="active-bettors">${activeBettors.map(p=>betBlockHTML(p)).join('')}</div>
+    <div class="wetter-section">
+      <div style="font-size:11px;color:#444;margin-bottom:10px">Weitere Wetter hinzufügen:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${inactiveBettors.map(p=>`<div class="chip" id="add-chip-${p.id}" onclick="addBettor('${p.id}')">${p.name} +</div>`).join('')}</div>
+    </div>`;
+
+  activeBettors.forEach(p=>refreshBetUI(p.id));
+  updatePotPreview();
+}
+
+function betBlockHTML(p){
+  const b=wBets[p.id]||{target:null,stake:2,active:false};
+  const tgts=wParts; // can only bet on participants
+  const isParticipant=wParts.includes(p.id);
+  return`<div class="bet-block" id="bb-${p.id}">
+    <div class="bet-block-name">
+      <span style="display:flex;align-items:center;gap:8px">
+        <div style="width:26px;height:26px;border-radius:50%;background:${p.bg};color:${p.color};font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0">${p.name[0]}</div>
+        ${p.name}${isParticipant?'':' <span style="font-size:10px;color:#444;margin-left:2px">extern</span>'}
+      </span>
+      ${!isParticipant?`<button class="toggle-btn" onclick="removeBettor('${p.id}')" style="color:#f87171;border-color:#3a1010">✕</button>`:''}
+    </div>
+    <div class="bet-block-label">Wettet auf</div>
+    <div class="target-chips">${tgts.map(tid=>`<div class="target-chip${b.target===tid?' active':''}" id="tc-${p.id}-${tid}" onclick="setBT('${p.id}','${tid}')">${gp(tid).name} <span style="font-size:10px;opacity:.6">${getQuote(tid).current.toFixed(2)}</span></div>`).join('')}</div>
+    <div class="bet-block-label">Einsatz</div>
+    <div class="stake-row">
+      <div class="stake-pill${b.stake===1?' active':''}" id="sp-${p.id}-1" onclick="setBS('${p.id}',1)">1€</div>
+      <div class="stake-pill${b.stake===2?' active':''}" id="sp-${p.id}-2" onclick="setBS('${p.id}',2)">2€</div>
+      <div class="stake-pill${b.stake===3?' active':''}" id="sp-${p.id}-3" onclick="setBS('${p.id}',3)">3€</div>
+    </div>
+    <div class="bet-summary">
+      <span class="bet-summary-text" id="bs-summary-${p.id}">${b.target?`→ ${gp(b.target).name} · ${getQuote(b.target).current.toFixed(2)}`:'Noch keine Wette'}</span>
+      <span class="bet-summary-val" id="bs-val-${p.id}">${b.target?`= ${(getQuote(b.target).current*b.stake).toFixed(2)}€`:''}</span>
+    </div>
+  </div>`;
+}
+
+function addBettor(pid){
+  wBets[pid]={target:null,stake:2,active:true};
+  renderStep3();
+}
+function removeBettor(pid){
+  wBets[pid].active=false;
+  wBets[pid].target=null;
+  renderStep3();
+}
+
+function setBT(pid,tid){
+  if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};
+  wBets[pid].target=tid;
+  wParts.forEach(x=>{const el=document.getElementById(`tc-${pid}-${x}`);if(el)el.classList.toggle('active',x===tid);});
+  refreshBetSummary(pid);updatePotPreview();
+}
+function setBS(pid,stake){
+  if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};
+  wBets[pid].stake=stake;
+  [1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===stake);});
+  refreshBetSummary(pid);updatePotPreview();
+}
+function refreshBetUI(pid){
+  const b=wBets[pid];
+  if(!b) return;
+  wParts.forEach(tid=>{const el=document.getElementById(`tc-${pid}-${tid}`);if(el)el.classList.toggle('active',tid===b.target);});
+  [1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===b.stake);});
+  refreshBetSummary(pid);
+}
+function refreshBetSummary(pid){
+  const b=wBets[pid];
+  const se=document.getElementById(`bs-summary-${pid}`);
+  const ve=document.getElementById(`bs-val-${pid}`);
+  if(!se||!ve) return;
+  if(b&&b.target){
+    const q=getQuote(b.target).current;
+    se.textContent=`→ ${gp(b.target).name} · ${q.toFixed(2)}`;
+    ve.textContent=`= ${(q*b.stake).toFixed(2)}€`;
+  } else {se.textContent='Noch keine Wette';ve.textContent='';}
+}
+function updatePotPreview(){
+  const placed=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target);
+  const totalIn=placed.reduce((s,p)=>s+wBets[p.id].stake,0);
+  const maxOut=placed.reduce((s,p)=>s+getQuote(wBets[p.id].target).current*wBets[p.id].stake,0);
+  const pp=document.getElementById('pot-preview');
+  if(totalIn>0){pp.style.display='block';document.getElementById('pot-total').textContent=totalIn+'€';document.getElementById('pot-maxpayout').textContent=maxOut.toFixed(2)+'€';}
+  else pp.style.display='none';
+}
+function togglePart(id){
+  const i=wParts.indexOf(id);
+  if(i>=0){wParts.splice(i,1);if(wBets[id])wBets[id].active=false;}
+  else{wParts.push(id);if(!wBets[id])wBets[id]={target:null,stake:2,active:true};else wBets[id].active=true;}
+  wFinals=wFinals.filter(x=>wParts.includes(x));
+  if(wLoser&&!wParts.includes(wLoser))wLoser=null;
+  renderStep0();
+}
+function toggleFinal(id){const i=wFinals.indexOf(id);if(i>=0)wFinals.splice(i,1);else wFinals.push(id);renderStep1();}
+function selLoser(id){wLoser=id;renderStep2();}
+function nextStep(from){
+  if(from===0&&wParts.length<2)return;
+  if(from===2&&!wLoser)return;
+  wStep++;renderStepDots();showWStep(wStep);
+  if(wStep===1)renderStep1();
+  if(wStep===2)renderStep2();
+  if(wStep===3)renderStep3();
+}
+function submitDay(){
+  const bets=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target).map(p=>({
+    player:p.id,target:wBets[p.id].target,stake:wBets[p.id].stake,quoteAtTime:getQuote(wBets[p.id].target).current
+  }));
+  HISTORY.unshift({date:new Date().toISOString().split('T')[0],participants:[...wParts],finalists:[...wFinals],loser:wLoser,bets});
+  renderAll();showPage('home');
+}
+
+// --- HISTORY ---
+function renderHistory(){
+  document.getElementById('history-list').innerHTML=HISTORY.map(day=>{
+    const loser=gp(day.loser);
+    const totalIn=day.bets.reduce((s,b)=>s+b.stake,0);
+    const totalOut=day.bets.reduce((s,b)=>s+calcPayout(b,day.loser),0);
+    const bankResult=+(totalIn-totalOut).toFixed(2);
+    const winners=day.bets.filter(b=>b.target===day.loser);
+    const hasBets=day.bets.length>0;
+    let betsHTML='';
+    if(hasBets){
+      betsHTML=`<div style="margin-top:10px;border-top:0.5px solid #1e2230;padding-top:10px">
+        <div style="font-size:10px;color:#333;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Wetten</div>
+        ${day.bets.map(b=>{
+          const bp=gp(b.player);const tp=gp(b.target);const payout=calcPayout(b,day.loser);const isWin=payout>0;
+          const ext=!day.participants.includes(b.player);
+          return`<div class="bet-detail-row"><div style="display:flex;align-items:center;gap:6px">
+            <div style="width:20px;height:20px;border-radius:50%;background:${bp.bg};color:${bp.color};font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0">${bp.name[0]}</div>
+            <span style="font-size:12px;color:#888">${bp.name}${ext?'<span style="font-size:9px;color:#333;margin-left:3px">ext</span>':''}</span>
+            <span style="font-size:11px;color:#333">→</span>
+            <span style="font-size:12px;color:${isWin?'#4ade80':'#555'}">${tp.name}</span>
+            <span style="font-size:10px;color:#333">×${b.quoteAtTime?b.quoteAtTime.toFixed(2):'?'}</span>
+          </div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <span style="font-size:11px;color:#444">${b.stake}€</span>
+            ${isWin?`<span class="payout-badge">+${payout.toFixed(2)}€</span>`:`<span style="font-size:11px;color:#333">−${b.stake}€</span>`}
+          </div></div>`;
+        }).join('')}
+        <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px solid #1e2230">
+          <span style="font-size:11px;color:#444">Bank <span style="color:${bankResult>=0?'#4ade80':'#f87171'}">${bankResult>=0?'+':''}${bankResult.toFixed(2)}€</span></span>
+          <span style="font-size:11px;color:#333">${totalIn}€ rein · ${totalOut.toFixed(2)}€ raus</span>
+        </div>
+      </div>`;
+    }
+    return`<div class="history-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div>
+          <div style="font-size:12px;color:#444">${fmtDate(day.date)}</div>
+          <div style="font-size:13px;font-weight:500;color:#f87171;margin-top:3px">${loser.name} hat verloren</div>
+          ${day.finalists.length?`<div style="font-size:11px;color:#333;margin-top:2px">Finale: ${day.finalists.map(id=>gp(id).name).join(', ')}</div>`:''}
+        </div>
+        <div style="text-align:right">${hasBets?`<div style="font-size:13px;color:#c8ff00;font-weight:500">${totalIn}€ rein</div><div style="font-size:10px;color:#333">${day.bets.length} Wetten</div>`:'<div style="font-size:11px;color:#2a2d3a">Keine Wetten</div>'}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${day.participants.map(id=>`<span class="hist-chip${winners.some(w=>w.player===id)?' winner':''}">${gp(id).name}</span>`).join('')}</div>
+      ${betsHTML}
+    </div>`;
+  }).join('');
+}
+
+// --- LEADERBOARD ---
+let lbTab='losses';
+function switchLb(t){lbTab=t;['profit','losses','streak','finals'].forEach(x=>document.getElementById('lt-'+x).classList.toggle('selected',x===t));renderLb();}
+function renderLb(){
+  const bettors=new Set();HISTORY.forEach(d=>d.bets.forEach(b=>bettors.add(b.player)));
+  const data=ALL_PLAYERS.filter(p=>calcStats(p.id).participations>0||bettors.has(p.id)).map(p=>({p,s:calcStats(p.id)}));
+  const sorted={
+    profit:[...data].sort((a,b)=>b.s.net-a.s.net),
+    losses:[...data].filter(x=>x.s.participations>0).sort((a,b)=>b.s.losses-a.s.losses),
+    streak:[...data].filter(x=>x.s.participations>0).sort((a,b)=>b.s.streak-a.s.streak),
+    finals:[...data].filter(x=>x.s.participations>0).sort((a,b)=>b.s.finals-a.s.finals),
+  }[lbTab];
+  document.getElementById('lb-list').innerHTML=sorted.map(({p,s},i)=>{
+    let mv,cls,sub;
+    if(lbTab==='profit'){mv=(s.net>=0?'+':'')+s.net.toFixed(2)+'€';cls=s.net>=0?'arrow-up':'arrow-dn';sub=`${s.wins} Siege · ${s.totalStaked.toFixed(2)}€ gesetzt`;}
+    else if(lbTab==='losses'){mv=s.losses+' NL';cls=s.losses>=2?'arrow-dn':'arrow-eq';sub=`${s.participations} Spiele · ${s.finals} Finals`;}
+    else if(lbTab==='streak'){mv=s.streak+' Tage';cls='arrow-up';sub=`Beste: ${s.bestStreak} · ${s.losses} NL`;}
+    else{mv=s.finals+' Finals';cls='arrow-eq';sub=`${s.losses} NL · ${s.participations} Spiele`;}
+    return`<div class="lb-row"><div style="font-size:12px;color:#333;width:18px;flex-shrink:0">${i+1}</div><div class="avatar" style="background:${p.bg};color:${p.color};width:34px;height:34px;font-size:12px;flex-shrink:0">${p.name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#f0f0f0">${p.name}</div><div style="font-size:11px;color:#444;margin-top:2px">${sub}</div></div><div class="${cls}" style="font-size:15px;font-weight:500">${mv}</div></div>`;
+  }).join('');
+}
+
+// --- SETTINGS / PLAYER MANAGEMENT ---
+function addPlayer(){
+  const input=document.getElementById('new-player-input');
+  const name=input.value.trim();
+  const msg=document.getElementById('add-player-msg');
+  if(!name){msg.textContent='Bitte einen Namen eingeben.';msg.style.color='#f87171';return;}
+  const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  if(ALL_PLAYERS.find(p=>p.id===id||p.name.toLowerCase()===name.toLowerCase())){
+    msg.textContent='Spieler existiert bereits.';msg.style.color='#f87171';return;
+  }
+  const i=ALL_PLAYERS.length;
+  const newP={id,name,color:COLORS[i%COLORS.length],bg:BKGS[i%BKGS.length]};
+  ALL_PLAYERS.push(newP);
+  CURRENT_QUOTES[id]={current:Q_NEW,prev:Q_NEW};
+  input.value='';
+  msg.textContent=`${name} hinzugefügt mit Startquote ${Q_NEW.toFixed(2)}`;
+  msg.style.color='#4ade80';
+  setTimeout(()=>msg.textContent='',3000);
+  renderPlayerManage();
+  renderHome();
+}
+
+function renderPlayerManage(){
+  document.getElementById('player-manage-list').innerHTML=ALL_PLAYERS.map(p=>{
+    const s=calcStats(p.id);
+    const q=getQuote(p.id);
+    return`<div class="player-manage-row">
+      <div class="avatar" style="background:${p.bg};color:${p.color};width:34px;height:34px;font-size:12px;flex-shrink:0">${p.name[0]}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:#f0f0f0">${p.name}</div>
+        <div style="font-size:11px;color:#444;margin-top:2px">${s.participations} Spiele · ${s.losses} NL · Quote ${q.current.toFixed(2)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// --- WHATSAPP ---
+function generateWA(){
+  const sorted=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id)})).sort((a,b)=>a.q.current-b.q.current);
+  const allS=ALL_PLAYERS.map(p=>({p,s:calcStats(p.id)})).filter(x=>x.s.participations>0);
+  const ml=[...allS].sort((a,b)=>b.s.losses-a.s.losses)[0];
+  const bs=[...allS].sort((a,b)=>b.s.streak-a.s.streak)[0];
+  const bf=[...allS].sort((a,b)=>b.s.finals-a.s.finals)[0];
+  const ll=HISTORY[0];
+  const dateStr=fmtDate(new Date().toISOString().split('T')[0]);
+  let txt=`🔥 MITTAGS-QUOTEN (${dateStr}) 🔥\n\n`;
+  sorted.forEach(({p,q})=>{
+    const diff=+(q.current-q.prev).toFixed(2);
+    txt+=`${p.name} – ${q.current.toFixed(2)} ${diff<-0.01?'↓':diff>0.01?'↑':'→'}\n`;
+  });
+  txt+=`\n📊 STATS\n\nMeiste Niederlagen:\n${ml?ml.p.name+' ('+ml.s.losses+')':'–'}\n\nStreak:\n${bs?bs.p.name+' ('+bs.s.streak+' Tage)':'–'}\n\nFinalteilnahmen:\n${bf?bf.p.name+' ('+bf.s.finals+')':'–'}`;
+  if(ll)txt+=`\n\nLetzte Niederlage:\n${gp(ll.loser).name} (${fmtDate(ll.date)})`;
+  document.getElementById('wa-text').textContent=txt;
+}
+function copyWA(){
+  navigator.clipboard.writeText(document.getElementById('wa-text').textContent).then(()=>{
+    const b=document.getElementById('copy-btn');b.textContent='Kopiert ✓';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='Kopieren';b.classList.remove('copied');},2000);
+  });
+}
+
+// --- NAV ---
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const nb=document.getElementById('nav-'+name);if(nb)nb.classList.add('active');
+  if(name==='quotes')renderQuotes();
+  if(name==='history')renderHistory();
+  if(name==='leaderboard')renderLb();
+  if(name==='settings')renderPlayerManage();
+  if(name==='home')renderHome();
+  if(name==='whatsapp')generateWA();
+}
+function renderAll(){renderHome();}
+renderAll();
+</script>
+</body></html>
