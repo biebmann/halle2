@@ -30,6 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .q-card .sub{font-size:11px;color:#444;margin-top:2px}
 .btn-primary{width:100%;padding:13px;background:#c8ff00;color:#0f1117;border:none;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;margin-top:12px}
 .btn-secondary{width:100%;padding:12px;background:transparent;color:#4ade80;border:0.5px solid #2a5a2f;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;margin-top:6px}
+.btn-danger{width:100%;padding:12px;background:transparent;color:#f87171;border:0.5px solid #3a1010;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;margin-top:6px}
 .chip{padding:7px 14px;border-radius:20px;border:0.5px solid #2a2d3a;background:#161820;color:#888;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none}
 .chip.selected{background:#1e2a10;border-color:#c8ff00;color:#c8ff00}
 .chip.loser-sel{background:#2a1515;border-color:#f87171;color:#f87171}
@@ -53,7 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bet-summary{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px solid #1e2230}
 .bet-summary-text{font-size:11px;color:#444}
 .bet-summary-val{font-size:11px;font-weight:500;color:#c8ff00}
-.history-card{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.history-card{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.history-card:hover{border-color:#3a3f52}
 .hist-chip{font-size:11px;padding:2px 7px;border-radius:8px;background:#1e2230;color:#555}
 .hist-chip.winner{background:#1e2a10;color:#4ade80}
 .bet-detail-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid #1a1c26}
@@ -67,8 +69,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .payout-badge{background:#0d1a08;border:0.5px solid #2a5010;border-radius:8px;padding:2px 8px;font-size:11px;color:#c8ff00;font-weight:500}
 .text-input{width:100%;padding:12px 14px;background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;color:#f0f0f0;font-size:14px;outline:none;margin-bottom:10px}
 .text-input:focus{border-color:#c8ff00}
+.date-input{width:100%;padding:12px 14px;background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;color:#f0f0f0;font-size:15px;font-weight:500;outline:none;margin-bottom:4px;-webkit-appearance:none}
+.date-input:focus{border-color:#c8ff00}
 .player-manage-row{background:#161820;border:0.5px solid #2a2d3a;border-radius:12px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px}
 .wetter-section{border-top:0.5px solid #1e2230;padding-top:12px;margin-top:4px}
+.net-badge{font-size:13px;font-weight:500;padding:4px 10px;border-radius:8px;flex-shrink:0}
+.net-pos{color:#4ade80;background:#082210;border:0.5px solid #1a4020}
+.net-neg{color:#f87171;background:#1a0808;border:0.5px solid #3a1010}
+.net-zero{color:#555;background:#161820;border:0.5px solid #2a2d3a}
+.edit-banner{background:#1a1f35;border:0.5px solid #2a3a70;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 </style></head><body>
 <div class="app">
   <div style="flex:1">
@@ -93,7 +102,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="divider"></div>
       <div class="section-title">Quick Stats</div>
       <div class="q-grid" id="home-stats"></div>
-      <button class="btn-primary" onclick="startWizard()">+ Neuen Tag eingeben</button>
+      <button class="btn-primary" onclick="startWizard(null)">+ Neuen Tag eingeben</button>
       <button class="btn-secondary" onclick="showPage('whatsapp')">WhatsApp-Zusammenfassung</button>
     </div>
 
@@ -105,28 +114,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div id="page-new-day" class="page">
-      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Neuer Tag</div>
-      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:12px">Ergebnis eingeben</h2>
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px" id="wizard-mode-label">Neuer Tag</div>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:12px" id="wizard-title">Ergebnis eingeben</h2>
+      <div id="edit-banner" style="display:none" class="edit-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7bb3ff" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span style="font-size:12px;color:#7bb3ff" id="edit-banner-text">Bearbeitungsmodus</span>
+      </div>
       <div class="step-dots" id="step-dots"></div>
+
       <div class="wizard-step active" id="step-0">
+        <div class="step-title">Datum</div>
+        <div class="step-sub">Wann wurde gespielt?</div>
+        <input type="date" class="date-input" id="date-picker">
+        <div style="font-size:11px;color:#444;margin-bottom:16px">Ältere Tage zum Nachtragen auswählen</div>
+        <button class="btn-primary" onclick="nextStep(0)">Weiter →</button>
+      </div>
+
+      <div class="wizard-step" id="step-1">
         <div class="step-title">Wer hat mitgespielt?</div>
         <div class="step-sub">Nur die SSP-Teilnehmer von heute</div>
         <div class="chip-grid" id="p-chips"></div>
-        <button class="btn-primary" onclick="nextStep(0)">Weiter →</button>
+        <button class="btn-primary" onclick="nextStep(1)">Weiter →</button>
       </div>
-      <div class="wizard-step" id="step-1">
+
+      <div class="wizard-step" id="step-2">
         <div class="step-title">Finalisten?</div>
         <div class="step-sub">Wer war im Finale? (optional)</div>
         <div class="chip-grid" id="f-chips"></div>
-        <button class="btn-primary" onclick="nextStep(1)">Weiter →</button>
+        <button class="btn-primary" onclick="nextStep(2)">Weiter →</button>
       </div>
-      <div class="wizard-step" id="step-2">
+
+      <div class="wizard-step" id="step-3">
         <div class="step-title">Wer hat verloren?</div>
         <div class="step-sub">Den Verlierer auswählen</div>
         <div class="chip-grid" id="l-chips"></div>
-        <button class="btn-primary" onclick="nextStep(2)">Weiter →</button>
+        <button class="btn-primary" onclick="nextStep(3)">Weiter →</button>
       </div>
-      <div class="wizard-step" id="step-3">
+
+      <div class="wizard-step" id="step-4">
         <div class="step-title">Wetten eingeben</div>
         <div class="step-sub">Alle können wetten — auch Nicht-Mitspieler</div>
         <div id="bet-rows-container"></div>
@@ -140,13 +165,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <span style="font-size:13px;font-weight:500;color:#f87171" id="pot-maxpayout">0€</span>
           </div>
         </div>
-        <button class="btn-primary" onclick="submitDay()">Tag speichern ✓</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitDay()">Tag speichern ✓</button>
       </div>
     </div>
 
     <div id="page-history" class="page">
       <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Verlauf</div>
-      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:14px">Spielhistorie</h2>
+      <h2 style="font-size:20px;font-weight:500;color:#f0f0f0;margin-bottom:4px">Spielhistorie</h2>
+      <div style="font-size:12px;color:#555;margin-bottom:14px">Auf einen Tag tippen zum Bearbeiten</div>
       <div id="history-list"></div>
     </div>
 
@@ -170,7 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn-primary" style="margin-top:0" onclick="addPlayer()">Spieler hinzufügen</button>
       <div id="add-player-msg" style="font-size:12px;color:#4ade80;margin-top:8px;min-height:18px"></div>
       <div class="divider"></div>
-      <div class="section-title">Alle Spieler</div>
+      <div class="section-title">Wettkontostand</div>
       <div id="player-manage-list"></div>
     </div>
 
@@ -190,7 +216,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="nav-btn" id="nav-quotes" onclick="showPage('quotes')">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Quoten
     </button>
-    <button class="nav-btn" id="nav-new-day" onclick="startWizard()">
+    <button class="nav-btn" id="nav-new-day" onclick="startWizard(null)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Neu
     </button>
     <button class="nav-btn" id="nav-history" onclick="showPage('history')">
@@ -229,88 +255,157 @@ let CURRENT_QUOTES={
 };
 
 let HISTORY=[
-  {
-    date:'2026-04-08',
-    participants:['leo','kilian','guez','lasse','niclas','jano','jonas','sebo'],
-    finalists:['jonas','lasse'],
-    loser:'lasse',
-    bets:[
-      {player:'kilian', target:'jano',  stake:1, quoteAtTime:2.20},
-      {player:'leo',    target:'jonas', stake:1, quoteAtTime:2.20},
-      {player:'guez',   target:'leo',   stake:1, quoteAtTime:1.85},
-      {player:'jakob',  target:'jano',  stake:2, quoteAtTime:2.20},
-      {player:'jano',   target:'kilian',stake:1, quoteAtTime:2.05},
-      {player:'niclas', target:'guez',  stake:1, quoteAtTime:2.20},
-      {player:'lasse',  target:'jano',  stake:2, quoteAtTime:2.20},
-      {player:'sebo',   target:'leo',   stake:1, quoteAtTime:1.85},
-      {player:'dave',   target:'sebo',  stake:2, quoteAtTime:2.50},
-      {player:'bruemmi',target:'lasse', stake:2, quoteAtTime:2.50},
-    ]
-  },
-  {
-    date:'2026-04-07',
-    participants:['leo','kilian','sebo','niclas'],
-    finalists:['niclas','leo'],
-    loser:'niclas',
-    bets:[
-      {player:'jan',    target:'kilian',stake:3,quoteAtTime:2.00},
-      {player:'sebo',   target:'leo',   stake:1,quoteAtTime:1.80},
-      {player:'jakob',  target:'sebo',  stake:3,quoteAtTime:2.50},
-      {player:'bruemmi',target:'lasse', stake:3,quoteAtTime:2.50},
-      {player:'niclas', target:'lasse', stake:2,quoteAtTime:2.50},
-      {player:'leo',    target:'sebo',  stake:2,quoteAtTime:2.50},
-      {player:'kilian', target:'niclas',stake:1,quoteAtTime:1.50},
-      {player:'lasse',  target:'sebo',  stake:2,quoteAtTime:2.50},
-    ]
-  },
+  {date:'2026-04-08',participants:['leo','kilian','guez','lasse','niclas','jano','jonas','sebo'],finalists:['jonas','lasse'],loser:'lasse',
+   bets:[
+    {player:'kilian', target:'jano',  stake:1,quoteAtTime:2.20},
+    {player:'leo',    target:'jonas', stake:1,quoteAtTime:2.20},
+    {player:'guez',   target:'leo',   stake:1,quoteAtTime:1.85},
+    {player:'jakob',  target:'jano',  stake:2,quoteAtTime:2.20},
+    {player:'jano',   target:'kilian',stake:1,quoteAtTime:2.05},
+    {player:'niclas', target:'guez',  stake:1,quoteAtTime:2.20},
+    {player:'lasse',  target:'jano',  stake:2,quoteAtTime:2.20},
+    {player:'sebo',   target:'leo',   stake:1,quoteAtTime:1.85},
+    {player:'dave',   target:'sebo',  stake:2,quoteAtTime:2.50},
+    {player:'bruemmi',target:'lasse', stake:2,quoteAtTime:2.50},
+  ]},
+  {date:'2026-04-07',participants:['leo','kilian','sebo','niclas'],finalists:['niclas','leo'],loser:'niclas',
+   bets:[
+    {player:'jan',    target:'kilian',stake:3,quoteAtTime:2.00},
+    {player:'sebo',   target:'leo',   stake:1,quoteAtTime:1.80},
+    {player:'jakob',  target:'sebo',  stake:3,quoteAtTime:2.50},
+    {player:'bruemmi',target:'lasse', stake:3,quoteAtTime:2.50},
+    {player:'niclas', target:'lasse', stake:2,quoteAtTime:2.50},
+    {player:'leo',    target:'sebo',  stake:2,quoteAtTime:2.50},
+    {player:'kilian', target:'niclas',stake:1,quoteAtTime:1.50},
+    {player:'lasse',  target:'sebo',  stake:2,quoteAtTime:2.50},
+  ]},
   {date:'2026-04-02',participants:['kilian','lasse','leo','sebo'],finalists:['leo','niclas'],loser:'leo',bets:[]},
   {date:'2026-04-01',participants:['niclas','kilian','lasse','sebo','leo'],finalists:['lasse','niclas','kilian'],loser:'kilian',bets:[]},
   {date:'2026-03-31',participants:['kilian','lasse','leo','niclas','sebo'],finalists:['sebo','niclas'],loser:'niclas',bets:[]},
 ];
 
 function getQuote(pid){return CURRENT_QUOTES[pid]||{current:Q_NEW,prev:Q_NEW};}
-
-function calcPayout(bet,loser){
-  if(bet.target!==loser) return 0;
-  return +((bet.quoteAtTime||1.5)*bet.stake).toFixed(2);
-}
-function calcBank(){
-  let b=0;
-  HISTORY.forEach(day=>day.bets.forEach(bet=>{b+=bet.stake;b-=calcPayout(bet,day.loser);}));
-  return +b.toFixed(2);
-}
+function calcPayout(bet,loser){if(bet.target!==loser)return 0;return+((bet.quoteAtTime||1.5)*bet.stake).toFixed(2);}
+function calcBank(){let b=0;HISTORY.forEach(day=>day.bets.forEach(bet=>{b+=bet.stake;b-=calcPayout(bet,day.loser);}));return+b.toFixed(2);}
 function calcStats(pid){
   const days=HISTORY.filter(d=>d.participants.includes(pid));
   const losses=HISTORY.filter(d=>d.loser===pid).length;
   const finals=HISTORY.filter(d=>d.finalists&&d.finalists.includes(pid)).length;
   let totalStaked=0,totalWon=0,wins=0;
-  HISTORY.forEach(day=>{
-    const mb=day.bets.find(b=>b.player===pid);
-    if(!mb) return;
-    totalStaked+=mb.stake;
-    const p=calcPayout(mb,day.loser);
-    if(p>0){wins++;totalWon+=p;}
-  });
+  HISTORY.forEach(day=>{const mb=day.bets.find(b=>b.player===pid);if(!mb)return;totalStaked+=mb.stake;const p=calcPayout(mb,day.loser);if(p>0){wins++;totalWon+=p;}});
   let streak=0,cur=0,bestStreak=0,started=false;
-  [...HISTORY].reverse().forEach(d=>{
-    if(!d.participants.includes(pid)) return;
-    if(d.loser!==pid){cur++;if(!started)streak=cur;bestStreak=Math.max(bestStreak,cur);}
-    else{if(!started)started=true;bestStreak=Math.max(bestStreak,cur);cur=0;}
-    started=true;
-  });
+  [...HISTORY].reverse().forEach(d=>{if(!d.participants.includes(pid))return;if(d.loser!==pid){cur++;if(!started)streak=cur;bestStreak=Math.max(bestStreak,cur);}else{if(!started)started=true;bestStreak=Math.max(bestStreak,cur);cur=0;}started=true;});
   const lastLoss=[...HISTORY].reverse().find(d=>d.loser===pid);
   return{participations:days.length,losses,finals,wins,totalStaked:+totalStaked.toFixed(2),totalWon:+totalWon.toFixed(2),net:+(totalWon-totalStaked).toFixed(2),streak,bestStreak,lastLoss:lastLoss?lastLoss.date:null};
 }
 function fmtDate(d){const[y,m,dd]=d.split('-');return`${dd}.${m}.${y.slice(2)}`;}
+function todayStr(){return new Date().toISOString().split('T')[0];}
 
+// --- WIZARD ---
+let wStep=0,wParts=[],wFinals=[],wLoser=null,wBets={},wDate='',wEditIdx=null;
+
+function startWizard(editIdx){
+  wEditIdx=editIdx;
+  wStep=0;wParts=[];wFinals=[];wLoser=null;wBets={};wDate=todayStr();
+
+  if(editIdx!==null&&editIdx!==undefined){
+    const day=HISTORY[editIdx];
+    wDate=day.date;
+    wParts=[...day.participants];
+    wFinals=[...day.finalists];
+    wLoser=day.loser;
+    day.bets.forEach(b=>{wBets[b.player]={target:b.target,stake:b.stake,active:true,quoteAtTime:b.quoteAtTime};});
+    document.getElementById('wizard-mode-label').textContent='Bearbeiten';
+    document.getElementById('wizard-title').textContent='Tag bearbeiten';
+    document.getElementById('edit-banner').style.display='flex';
+    document.getElementById('edit-banner-text').textContent=`Bearbeite: ${fmtDate(day.date)} — ${gp(day.loser).name} hat verloren`;
+    document.getElementById('submit-btn').textContent='Änderungen speichern ✓';
+  } else {
+    document.getElementById('wizard-mode-label').textContent='Neuer Tag';
+    document.getElementById('wizard-title').textContent='Ergebnis eingeben';
+    document.getElementById('edit-banner').style.display='none';
+    document.getElementById('submit-btn').textContent='Tag speichern ✓';
+  }
+
+  document.getElementById('date-picker').value=wDate;
+  showPage('new-day');
+  renderStepDots();
+  showWStep(0);
+}
+
+function renderStepDots(){document.getElementById('step-dots').innerHTML=[0,1,2,3,4].map(i=>`<div class="step-dot${i<=wStep?' done':''}"></div>`).join('');}
+function showWStep(n){wStep=n;[0,1,2,3,4].forEach(i=>document.getElementById('step-'+i).classList.toggle('active',i===n));renderStepDots();}
+
+function renderStep1(){document.getElementById('p-chips').innerHTML=ALL_PLAYERS.map(p=>`<div class="chip${wParts.includes(p.id)?' selected':''}" onclick="togglePart('${p.id}')">${p.name}</div>`).join('');}
+function renderStep2(){document.getElementById('f-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wFinals.includes(id)?' finalist-sel':''}" onclick="toggleFinal('${id}')">${p.name}</div>`;}).join('');}
+function renderStep3(){document.getElementById('l-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wLoser===id?' loser-sel':''}" onclick="selLoser('${id}')">${p.name}</div>`;}).join('');}
+function renderStep4(){
+  ALL_PLAYERS.forEach(p=>{if(!wBets[p.id])wBets[p.id]={target:null,stake:2,active:wParts.includes(p.id)};else if(wParts.includes(p.id))wBets[p.id].active=true;});
+  const active=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active);
+  const inactive=ALL_PLAYERS.filter(p=>!wBets[p.id]||!wBets[p.id].active);
+  document.getElementById('bet-rows-container').innerHTML=`<div id="active-bettors">${active.map(p=>betBlockHTML(p)).join('')}</div><div class="wetter-section"><div style="font-size:11px;color:#444;margin-bottom:10px">Weitere Wetter hinzufügen:</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${inactive.map(p=>`<div class="chip" onclick="addBettor('${p.id}')">${p.name} +</div>`).join('')}</div></div>`;
+  active.forEach(p=>refreshBetUI(p.id));
+  updatePotPreview();
+}
+
+function betBlockHTML(p){
+  const b=wBets[p.id]||{target:null,stake:2};
+  const isParticipant=wParts.includes(p.id);
+  return`<div class="bet-block" id="bb-${p.id}"><div class="bet-block-name"><span style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:${p.bg};color:${p.color};font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0">${p.name[0]}</div>${p.name}${!isParticipant?` <span style="font-size:10px;color:#444">extern</span>`:''}</span>${!isParticipant?`<button style="background:none;border:0.5px solid #3a1010;border-radius:8px;color:#f87171;font-size:11px;padding:4px 10px;cursor:pointer" onclick="removeBettor('${p.id}')">✕</button>`:''}</div><div class="bet-block-label">Wettet auf</div><div class="target-chips">${wParts.map(tid=>`<div class="target-chip${b.target===tid?' active':''}" id="tc-${p.id}-${tid}" onclick="setBT('${p.id}','${tid}')">${gp(tid).name} <span style="font-size:10px;opacity:.6">${getQuote(tid).current.toFixed(2)}</span></div>`).join('')}</div><div class="bet-block-label">Einsatz</div><div class="stake-row"><div class="stake-pill${b.stake===1?' active':''}" id="sp-${p.id}-1" onclick="setBS('${p.id}',1)">1€</div><div class="stake-pill${b.stake===2?' active':''}" id="sp-${p.id}-2" onclick="setBS('${p.id}',2)">2€</div><div class="stake-pill${b.stake===3?' active':''}" id="sp-${p.id}-3" onclick="setBS('${p.id}',3)">3€</div></div><div class="bet-summary"><span class="bet-summary-text" id="bs-summary-${p.id}">${b.target?`→ ${gp(b.target).name} · ${getQuote(b.target).current.toFixed(2)}`:'Noch keine Wette'}</span><span class="bet-summary-val" id="bs-val-${p.id}">${b.target?`= ${(getQuote(b.target).current*b.stake).toFixed(2)}€`:''}</span></div></div>`;
+}
+
+function addBettor(pid){wBets[pid]={target:null,stake:2,active:true};renderStep4();}
+function removeBettor(pid){wBets[pid].active=false;wBets[pid].target=null;renderStep4();}
+function setBT(pid,tid){if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};wBets[pid].target=tid;wParts.forEach(x=>{const el=document.getElementById(`tc-${pid}-${x}`);if(el)el.classList.toggle('active',x===tid);});refreshBetSummary(pid);updatePotPreview();}
+function setBS(pid,stake){if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};wBets[pid].stake=stake;[1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===stake);});refreshBetSummary(pid);updatePotPreview();}
+function refreshBetUI(pid){const b=wBets[pid];if(!b)return;wParts.forEach(tid=>{const el=document.getElementById(`tc-${pid}-${tid}`);if(el)el.classList.toggle('active',tid===b.target);});[1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===b.stake);});refreshBetSummary(pid);}
+function refreshBetSummary(pid){const b=wBets[pid];const se=document.getElementById(`bs-summary-${pid}`);const ve=document.getElementById(`bs-val-${pid}`);if(!se||!ve)return;if(b&&b.target){const q=getQuote(b.target).current;se.textContent=`→ ${gp(b.target).name} · ${q.toFixed(2)}`;ve.textContent=`= ${(q*b.stake).toFixed(2)}€`;}else{se.textContent='Noch keine Wette';ve.textContent='';}}
+function updatePotPreview(){const placed=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target);const totalIn=placed.reduce((s,p)=>s+wBets[p.id].stake,0);const maxOut=placed.reduce((s,p)=>s+getQuote(wBets[p.id].target).current*wBets[p.id].stake,0);const pp=document.getElementById('pot-preview');if(totalIn>0){pp.style.display='block';document.getElementById('pot-total').textContent=totalIn+'€';document.getElementById('pot-maxpayout').textContent=maxOut.toFixed(2)+'€';}else pp.style.display='none';}
+function togglePart(id){const i=wParts.indexOf(id);if(i>=0){wParts.splice(i,1);if(wBets[id])wBets[id].active=false;}else{wParts.push(id);if(!wBets[id])wBets[id]={target:null,stake:2,active:true};else wBets[id].active=true;}wFinals=wFinals.filter(x=>wParts.includes(x));if(wLoser&&!wParts.includes(wLoser))wLoser=null;renderStep1();}
+function toggleFinal(id){const i=wFinals.indexOf(id);if(i>=0)wFinals.splice(i,1);else wFinals.push(id);renderStep2();}
+function selLoser(id){wLoser=id;renderStep3();}
+
+function nextStep(from){
+  if(from===0){wDate=document.getElementById('date-picker').value||todayStr();showWStep(1);renderStep1();return;}
+  if(from===1&&wParts.length<2)return;
+  if(from===3&&!wLoser)return;
+  const next=from+1;
+  showWStep(next);
+  if(next===2)renderStep2();
+  if(next===3)renderStep3();
+  if(next===4)renderStep4();
+}
+
+function submitDay(){
+  const bets=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target).map(p=>({
+    player:p.id,target:wBets[p.id].target,stake:wBets[p.id].stake,
+    quoteAtTime:wBets[p.id].quoteAtTime||getQuote(wBets[p.id].target).current
+  }));
+  const entry={date:wDate,participants:[...wParts],finalists:[...wFinals],loser:wLoser,bets};
+
+  if(wEditIdx!==null&&wEditIdx!==undefined){
+    HISTORY[wEditIdx]=entry;
+  } else {
+    HISTORY.push(entry);
+  }
+  // Sort history by date descending
+  HISTORY.sort((a,b)=>b.date.localeCompare(a.date));
+  renderAll();
+  showPage('history');
+}
+
+function deleteDay(idx){
+  if(!confirm('Diesen Tag wirklich löschen?'))return;
+  HISTORY.splice(idx,1);
+  renderAll();
+  showPage('history');
+}
+
+// --- HOME ---
 function renderHome(){
   const sorted=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id)})).sort((a,b)=>a.q.current-b.q.current);
   document.getElementById('home-top-quotes').innerHTML=sorted.slice(0,3).map(({p,q})=>{
-    const diff=+(q.current-q.prev).toFixed(2);
-    const arrow=diff<-0.01?'↓':diff>0.01?'↑':'→';
-    const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';
-    const s=calcStats(p.id);
-    const rp=Math.round((1/q.current)*100);
+    const diff=+(q.current-q.prev).toFixed(2);const arrow=diff<-0.01?'↓':diff>0.01?'↑':'→';const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';const s=calcStats(p.id);const rp=Math.round((1/q.current)*100);
     return`<div class="quote-card"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">${s.losses} NL · ${s.participations} Spiele</div><div class="risk-bar"><div class="risk-fill" style="width:${Math.min(rp,100)}%;background:${p.color}"></div></div></div><div class="quote-right"><div class="quote-val">${q.current.toFixed(2)}</div><div class="quote-arrow ${cls}">${arrow} ${Math.abs(diff).toFixed(2)}</div></div></div>`;
   }).join('');
   const allS=ALL_PLAYERS.map(p=>({p,s:calcStats(p.id)})).filter(x=>x.s.participations>0);
@@ -328,85 +423,19 @@ function renderHome(){
   document.getElementById('home-days').textContent=HISTORY.length+' Spiele';
 }
 
+// --- QUOTES ---
 function renderQuotes(){
   const known=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id),s:calcStats(id)})).sort((a,b)=>a.q.current-b.q.current);
   const inactive=ALL_PLAYERS.filter(p=>!CURRENT_QUOTES[p.id]&&calcStats(p.id).participations===0);
   document.getElementById('quotes-list').innerHTML=known.map(({p,q,s})=>{
-    const diff=+(q.current-q.prev).toFixed(2);
-    const arrow=diff<-0.01?'↓ Gefährlicher':diff>0.01?'↑ Safer':'→';
-    const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';
-    const rp=Math.round((1/q.current)*100);
+    const diff=+(q.current-q.prev).toFixed(2);const arrow=diff<-0.01?'↓ Gefährlicher':diff>0.01?'↑ Safer':'→';const cls=diff<-0.01?'arrow-dn':diff>0.01?'arrow-up':'arrow-eq';const rp=Math.round((1/q.current)*100);
     return`<div class="quote-card"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">${s.losses} NL / ${s.participations} Spiele · ${rp}% Risiko</div><div class="risk-bar"><div class="risk-fill" style="width:${Math.min(rp,100)}%;background:${p.color}"></div></div></div><div class="quote-right"><div class="quote-val">${q.current.toFixed(2)}</div><div class="quote-arrow ${cls}">${arrow}</div></div></div>`;
   }).join('')+(inactive.length?`<div style="margin-top:14px"><div class="section-title">Noch nicht gespielt — Startquote ${Q_NEW.toFixed(2)}</div>${inactive.map(p=>`<div class="quote-card" style="opacity:.4"><div class="avatar" style="background:${p.bg};color:${p.color}">${p.name[0]}</div><div class="quote-info"><div class="quote-name">${p.name}</div><div class="quote-sub">Noch kein Spiel</div></div><div class="quote-right"><div class="quote-val">${Q_NEW.toFixed(2)}</div></div></div>`).join('')}</div>`:'');
 }
 
-let wStep=0,wParts=[],wFinals=[],wLoser=null,wBets={};
-function startWizard(){wStep=0;wParts=[];wFinals=[];wLoser=null;wBets={};showPage('new-day');renderStepDots();renderStep0();}
-function renderStepDots(){document.getElementById('step-dots').innerHTML=[0,1,2,3].map(i=>`<div class="step-dot${i<=wStep?' done':''}"></div>`).join('');}
-function showWStep(n){[0,1,2,3].forEach(i=>document.getElementById('step-'+i).classList.toggle('active',i===n));}
-function renderStep0(){document.getElementById('p-chips').innerHTML=ALL_PLAYERS.map(p=>`<div class="chip${wParts.includes(p.id)?' selected':''}" onclick="togglePart('${p.id}')">${p.name}</div>`).join('');}
-function renderStep1(){document.getElementById('f-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wFinals.includes(id)?' finalist-sel':''}" onclick="toggleFinal('${id}')">${p.name}</div>`;}).join('');}
-function renderStep2(){document.getElementById('l-chips').innerHTML=wParts.map(id=>{const p=gp(id);return`<div class="chip${wLoser===id?' loser-sel':''}" onclick="selLoser('${id}')">${p.name}</div>`;}).join('');}
-
-function renderStep3(){
-  ALL_PLAYERS.forEach(p=>{if(!wBets[p.id])wBets[p.id]={target:null,stake:2,active:wParts.includes(p.id)};else wBets[p.id].active=wBets[p.id].active||wParts.includes(p.id);});
-  const active=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active);
-  const inactive=ALL_PLAYERS.filter(p=>!wBets[p.id]||!wBets[p.id].active);
-  document.getElementById('bet-rows-container').innerHTML=`
-    <div id="active-bettors">${active.map(p=>betBlockHTML(p)).join('')}</div>
-    <div class="wetter-section">
-      <div style="font-size:11px;color:#444;margin-bottom:10px">Weitere Wetter hinzufügen:</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${inactive.map(p=>`<div class="chip" id="add-chip-${p.id}" onclick="addBettor('${p.id}')">${p.name} +</div>`).join('')}</div>
-    </div>`;
-  active.forEach(p=>refreshBetUI(p.id));
-  updatePotPreview();
-}
-
-function betBlockHTML(p){
-  const b=wBets[p.id]||{target:null,stake:2};
-  const isParticipant=wParts.includes(p.id);
-  return`<div class="bet-block" id="bb-${p.id}">
-    <div class="bet-block-name">
-      <span style="display:flex;align-items:center;gap:8px">
-        <div style="width:26px;height:26px;border-radius:50%;background:${p.bg};color:${p.color};font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0">${p.name[0]}</div>
-        ${p.name}${!isParticipant?` <span style="font-size:10px;color:#444">extern</span>`:''}
-      </span>
-      ${!isParticipant?`<button style="background:none;border:0.5px solid #3a1010;border-radius:8px;color:#f87171;font-size:11px;padding:4px 10px;cursor:pointer" onclick="removeBettor('${p.id}')">✕</button>`:''}
-    </div>
-    <div class="bet-block-label">Wettet auf</div>
-    <div class="target-chips">${wParts.map(tid=>`<div class="target-chip${b.target===tid?' active':''}" id="tc-${p.id}-${tid}" onclick="setBT('${p.id}','${tid}')">${gp(tid).name} <span style="font-size:10px;opacity:.6">${getQuote(tid).current.toFixed(2)}</span></div>`).join('')}</div>
-    <div class="bet-block-label">Einsatz</div>
-    <div class="stake-row">
-      <div class="stake-pill${b.stake===1?' active':''}" id="sp-${p.id}-1" onclick="setBS('${p.id}',1)">1€</div>
-      <div class="stake-pill${b.stake===2?' active':''}" id="sp-${p.id}-2" onclick="setBS('${p.id}',2)">2€</div>
-      <div class="stake-pill${b.stake===3?' active':''}" id="sp-${p.id}-3" onclick="setBS('${p.id}',3)">3€</div>
-    </div>
-    <div class="bet-summary">
-      <span class="bet-summary-text" id="bs-summary-${p.id}">${b.target?`→ ${gp(b.target).name} · ${getQuote(b.target).current.toFixed(2)}`:'Noch keine Wette'}</span>
-      <span class="bet-summary-val" id="bs-val-${p.id}">${b.target?`= ${(getQuote(b.target).current*b.stake).toFixed(2)}€`:''}</span>
-    </div>
-  </div>`;
-}
-
-function addBettor(pid){wBets[pid]={target:null,stake:2,active:true};renderStep3();}
-function removeBettor(pid){wBets[pid].active=false;wBets[pid].target=null;renderStep3();}
-function setBT(pid,tid){if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};wBets[pid].target=tid;wParts.forEach(x=>{const el=document.getElementById(`tc-${pid}-${x}`);if(el)el.classList.toggle('active',x===tid);});refreshBetSummary(pid);updatePotPreview();}
-function setBS(pid,stake){if(!wBets[pid])wBets[pid]={target:null,stake:2,active:true};wBets[pid].stake=stake;[1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===stake);});refreshBetSummary(pid);updatePotPreview();}
-function refreshBetUI(pid){const b=wBets[pid];if(!b)return;wParts.forEach(tid=>{const el=document.getElementById(`tc-${pid}-${tid}`);if(el)el.classList.toggle('active',tid===b.target);});[1,2,3].forEach(s=>{const el=document.getElementById(`sp-${pid}-${s}`);if(el)el.classList.toggle('active',s===b.stake);});refreshBetSummary(pid);}
-function refreshBetSummary(pid){const b=wBets[pid];const se=document.getElementById(`bs-summary-${pid}`);const ve=document.getElementById(`bs-val-${pid}`);if(!se||!ve)return;if(b&&b.target){const q=getQuote(b.target).current;se.textContent=`→ ${gp(b.target).name} · ${q.toFixed(2)}`;ve.textContent=`= ${(q*b.stake).toFixed(2)}€`;}else{se.textContent='Noch keine Wette';ve.textContent='';}}
-function updatePotPreview(){const placed=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target);const totalIn=placed.reduce((s,p)=>s+wBets[p.id].stake,0);const maxOut=placed.reduce((s,p)=>s+getQuote(wBets[p.id].target).current*wBets[p.id].stake,0);const pp=document.getElementById('pot-preview');if(totalIn>0){pp.style.display='block';document.getElementById('pot-total').textContent=totalIn+'€';document.getElementById('pot-maxpayout').textContent=maxOut.toFixed(2)+'€';}else pp.style.display='none';}
-function togglePart(id){const i=wParts.indexOf(id);if(i>=0){wParts.splice(i,1);if(wBets[id])wBets[id].active=false;}else{wParts.push(id);if(!wBets[id])wBets[id]={target:null,stake:2,active:true};else wBets[id].active=true;}wFinals=wFinals.filter(x=>wParts.includes(x));if(wLoser&&!wParts.includes(wLoser))wLoser=null;renderStep0();}
-function toggleFinal(id){const i=wFinals.indexOf(id);if(i>=0)wFinals.splice(i,1);else wFinals.push(id);renderStep1();}
-function selLoser(id){wLoser=id;renderStep2();}
-function nextStep(from){if(from===0&&wParts.length<2)return;if(from===2&&!wLoser)return;wStep++;renderStepDots();showWStep(wStep);if(wStep===1)renderStep1();if(wStep===2)renderStep2();if(wStep===3)renderStep3();}
-function submitDay(){
-  const bets=ALL_PLAYERS.filter(p=>wBets[p.id]&&wBets[p.id].active&&wBets[p.id].target).map(p=>({player:p.id,target:wBets[p.id].target,stake:wBets[p.id].stake,quoteAtTime:getQuote(wBets[p.id].target).current}));
-  HISTORY.unshift({date:new Date().toISOString().split('T')[0],participants:[...wParts],finalists:[...wFinals],loser:wLoser,bets});
-  renderAll();showPage('home');
-}
-
+// --- HISTORY ---
 function renderHistory(){
-  document.getElementById('history-list').innerHTML=HISTORY.map(day=>{
+  document.getElementById('history-list').innerHTML=HISTORY.map((day,idx)=>{
     const loser=gp(day.loser);
     const totalIn=day.bets.reduce((s,b)=>s+b.stake,0);
     const totalOut=day.bets.reduce((s,b)=>s+calcPayout(b,day.loser),0);
@@ -417,10 +446,28 @@ function renderHistory(){
     if(hasBets){
       betsHTML=`<div style="margin-top:10px;border-top:0.5px solid #1e2230;padding-top:10px"><div style="font-size:10px;color:#333;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Wetten</div>${day.bets.map(b=>{const bp=gp(b.player);const tp=gp(b.target);const payout=calcPayout(b,day.loser);const isWin=payout>0;const ext=!day.participants.includes(b.player);return`<div class="bet-detail-row"><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:${bp.bg};color:${bp.color};font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0">${bp.name[0]}</div><span style="font-size:12px;color:#888">${bp.name}${ext?'<span style="font-size:9px;color:#333;margin-left:3px">ext</span>':''}</span><span style="font-size:11px;color:#333">→</span><span style="font-size:12px;color:${isWin?'#4ade80':'#555'}">${tp.name}</span><span style="font-size:10px;color:#333">×${b.quoteAtTime?b.quoteAtTime.toFixed(2):'?'}</span></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0"><span style="font-size:11px;color:#444">${b.stake}€</span>${isWin?`<span class="payout-badge">+${payout.toFixed(2)}€</span>`:`<span style="font-size:11px;color:#333">−${b.stake}€</span>`}</div></div>`;}).join('')}<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:0.5px solid #1e2230"><span style="font-size:11px;color:#444">Bank <span style="color:${bankResult>=0?'#4ade80':'#f87171'}">${bankResult>=0?'+':''}${bankResult.toFixed(2)}€</span></span><span style="font-size:11px;color:#333">${totalIn}€ rein · ${totalOut.toFixed(2)}€ raus</span></div></div>`;
     }
-    return`<div class="history-card"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><div><div style="font-size:12px;color:#444">${fmtDate(day.date)}</div><div style="font-size:13px;font-weight:500;color:#f87171;margin-top:3px">${loser.name} hat verloren</div>${day.finalists.length?`<div style="font-size:11px;color:#333;margin-top:2px">Finale: ${day.finalists.map(id=>gp(id).name).join(', ')}</div>`:''}</div><div style="text-align:right">${hasBets?`<div style="font-size:13px;color:#c8ff00;font-weight:500">${totalIn}€ rein</div><div style="font-size:10px;color:#333">${day.bets.length} Wetten</div>`:'<div style="font-size:11px;color:#2a2d3a">Keine Wetten</div>'}</div></div><div style="display:flex;flex-wrap:wrap;gap:4px">${day.participants.map(id=>`<span class="hist-chip${winners.some(w=>w.player===id)?' winner':''}">${gp(id).name}</span>`).join('')}</div>${betsHTML}</div>`;
+    return`<div class="history-card" onclick="startWizard(${idx})">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:12px;color:#444">${fmtDate(day.date)}</div>
+            <div style="font-size:10px;color:#555;background:#1e2230;padding:2px 8px;border-radius:6px">Tippen zum Bearbeiten</div>
+          </div>
+          <div style="font-size:13px;font-weight:500;color:#f87171;margin-top:3px">${loser.name} hat verloren</div>
+          ${day.finalists.length?`<div style="font-size:11px;color:#333;margin-top:2px">Finale: ${day.finalists.map(id=>gp(id).name).join(', ')}</div>`:''}
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${hasBets?`<div style="font-size:13px;color:#c8ff00;font-weight:500">${totalIn}€ rein</div><div style="font-size:10px;color:#333">${day.bets.length} Wetten</div>`:'<div style="font-size:11px;color:#2a2d3a">Keine Wetten</div>'}
+          <button onclick="event.stopPropagation();deleteDay(${idx})" style="background:none;border:0.5px solid #3a1010;border-radius:6px;color:#f87171;font-size:10px;padding:3px 8px;cursor:pointer">Löschen</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${day.participants.map(id=>`<span class="hist-chip${winners.some(w=>w.player===id)?' winner':''}">${gp(id).name}</span>`).join('')}</div>
+      ${betsHTML}
+    </div>`;
   }).join('');
 }
 
+// --- LEADERBOARD ---
 let lbTab='losses';
 function switchLb(t){lbTab=t;['profit','losses','streak','finals'].forEach(x=>document.getElementById('lt-'+x).classList.toggle('selected',x===t));renderLb();}
 function renderLb(){
@@ -442,29 +489,33 @@ function renderLb(){
   }).join('');
 }
 
+// --- SETTINGS ---
 function addPlayer(){
-  const input=document.getElementById('new-player-input');
-  const name=input.value.trim();
-  const msg=document.getElementById('add-player-msg');
+  const input=document.getElementById('new-player-input');const name=input.value.trim();const msg=document.getElementById('add-player-msg');
   if(!name){msg.textContent='Bitte einen Namen eingeben.';msg.style.color='#f87171';return;}
   const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
   if(ALL_PLAYERS.find(p=>p.id===id||p.name.toLowerCase()===name.toLowerCase())){msg.textContent='Spieler existiert bereits.';msg.style.color='#f87171';return;}
-  const i=ALL_PLAYERS.length;
-  ALL_PLAYERS.push({id,name,color:COLORS[i%COLORS.length],bg:BKGS[i%BKGS.length]});
+  const i=ALL_PLAYERS.length;ALL_PLAYERS.push({id,name,color:COLORS[i%COLORS.length],bg:BKGS[i%BKGS.length]});
   CURRENT_QUOTES[id]={current:Q_NEW,prev:Q_NEW};
-  input.value='';
-  msg.textContent=`${name} hinzugefügt mit Startquote ${Q_NEW.toFixed(2)}`;
-  msg.style.color='#4ade80';
-  setTimeout(()=>msg.textContent='',3000);
-  renderPlayerManage();renderHome();
+  input.value='';msg.textContent=`${name} hinzugefügt mit Startquote ${Q_NEW.toFixed(2)}`;msg.style.color='#4ade80';
+  setTimeout(()=>msg.textContent='',3000);renderPlayerManage();renderHome();
 }
 function renderPlayerManage(){
-  document.getElementById('player-manage-list').innerHTML=ALL_PLAYERS.map(p=>{
-    const s=calcStats(p.id);const q=getQuote(p.id);
-    return`<div class="player-manage-row"><div class="avatar" style="background:${p.bg};color:${p.color};width:34px;height:34px;font-size:12px;flex-shrink:0">${p.name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#f0f0f0">${p.name}</div><div style="font-size:11px;color:#444;margin-top:2px">${s.participations} Spiele · ${s.losses} NL · Quote ${q.current.toFixed(2)}</div></div></div>`;
-  }).join('');
+  const bettors=new Set();HISTORY.forEach(d=>d.bets.forEach(b=>bettors.add(b.player)));
+  const active=ALL_PLAYERS.filter(p=>calcStats(p.id).participations>0||bettors.has(p.id));
+  const inactive=ALL_PLAYERS.filter(p=>!active.find(a=>a.id===p.id));
+  const sorted=[...active].sort((a,b)=>calcStats(b.id).net-calcStats(a.id).net);
+  document.getElementById('player-manage-list').innerHTML=
+    sorted.map(p=>{
+      const s=calcStats(p.id);const net=s.net;const netStr=(net>0?'+':'')+net.toFixed(2)+'€';
+      const badgeCls=net>0?'net-pos':net<0?'net-neg':'net-zero';
+      const sub=s.totalStaked>0?`${s.totalStaked.toFixed(2)}€ gesetzt · ${s.totalWon.toFixed(2)}€ gewonnen`:'Noch keine Wetten';
+      return`<div class="player-manage-row"><div class="avatar" style="background:${p.bg};color:${p.color};width:36px;height:36px;font-size:13px;flex-shrink:0">${p.name[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#f0f0f0">${p.name}</div><div style="font-size:11px;color:#444;margin-top:2px">${sub}</div></div><div class="net-badge ${badgeCls}">${netStr}</div></div>`;
+    }).join('')+
+    (inactive.length?`<div style="margin-top:14px"><div class="section-title">Noch keine Aktivität</div>${inactive.map(p=>`<div class="player-manage-row" style="opacity:.4"><div class="avatar" style="background:${p.bg};color:${p.color};width:36px;height:36px;font-size:13px;flex-shrink:0">${p.name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#f0f0f0">${p.name}</div><div style="font-size:11px;color:#444;margin-top:2px">Quote ${getQuote(p.id).current.toFixed(2)}</div></div><div class="net-badge net-zero">0.00€</div></div>`).join('')}</div>`:'');
 }
 
+// --- WHATSAPP ---
 function generateWA(){
   const sorted=Object.keys(CURRENT_QUOTES).map(id=>({p:gp(id),q:getQuote(id)})).sort((a,b)=>a.q.current-b.q.current);
   const allS=ALL_PLAYERS.map(p=>({p,s:calcStats(p.id)})).filter(x=>x.s.participations>0);
@@ -472,7 +523,7 @@ function generateWA(){
   const bs=[...allS].sort((a,b)=>b.s.streak-a.s.streak)[0];
   const bf=[...allS].sort((a,b)=>b.s.finals-a.s.finals)[0];
   const ll=HISTORY[0];
-  const dateStr=fmtDate(new Date().toISOString().split('T')[0]);
+  const dateStr=fmtDate(todayStr());
   let txt=`🔥 MITTAGS-QUOTEN (${dateStr}) 🔥\n\n`;
   sorted.forEach(({p,q})=>{const diff=+(q.current-q.prev).toFixed(2);txt+=`${p.name} – ${q.current.toFixed(2)} ${diff<-0.01?'↓':diff>0.01?'↑':'→'}\n`;});
   txt+=`\n📊 STATS\n\nMeiste Niederlagen:\n${ml?ml.p.name+' ('+ml.s.losses+')':'–'}\n\nStreak:\n${bs?bs.p.name+' ('+bs.s.streak+' Tage)':'–'}\n\nFinalteilnahmen:\n${bf?bf.p.name+' ('+bf.s.finals+')':'–'}`;
